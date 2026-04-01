@@ -13,7 +13,8 @@ This file is the **public** agent brief for the mcp-augment project. It omits pr
 ```bash
 export PROJECT_DIR="$(pwd)"   # repository root; required for many tests and runtime
 pip install -U pip mcp
-pip install -e .              # when packaging is valid; otherwise install `mcp` and test deps as needed
+pip install pytest hatchling    # hatchling if you use pip install -e . once wheel layout exists
+pip install -e .               # optional; prod tree may use pip install mcp + pytest only
 pytest tests/ -q --tb=short
 ```
 
