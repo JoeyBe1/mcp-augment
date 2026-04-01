@@ -8,7 +8,7 @@
 
 | Path | Role |
 |------|------|
-| `project-tools/mcp-hooks-server/` | MCP server and hook engine — **this is what you run and ship.** |
+| `project-tools/mcp-hooks-server/` | MCP server and hook engine used by this release. |
 | `.kilo/hooks/` | Default hook scripts and `config.yaml` (portable; same shape as Claude Code hooks). |
 | `tests/` | Automated checks for hooks and MCP behavior. |
 
@@ -250,23 +250,12 @@ Shell hooks (.kilo/hooks/*.sh) — portable, same format as Claude Code native h
 
 ## How It Differs
 
-| Capability                           | MCP Gateways (Latch, Bifrost) | Claude Code Hooks (Captain Hook) | mcp-augment                      |
-| ------------------------------------ | ----------------------------- | -------------------------------- | -------------------------------- |
-| Works without native client hooks    | No                            | No                               | **Yes**                          |
-| Atomic validate-then-execute         | No (two steps)                | No (two steps)                   | **Yes**                          |
-| Portable across AI clients           | Partially                     | No (Claude only)                 | **Yes**                          |
-| Pre-tool input interception/mutation | No                            | No                               | **Yes**                          |
-| Post-tool output hooks               | Transport only                | Yes (Claude only)                | **Yes, any client**              |
-| Mode enforcement                     | No                            | No                               | **Yes**                          |
-| Hook script validation built-in      | No                            | No                               | **Yes**                          |
-| Configurable handler types           | No                            | Shell only                       | **command, http, prompt, agent** |
+`mcp-augment` sits in a different place than both MCP proxy layers and Claude Code's native hooks.
 
-What this means in plain terms:
-
-- `mcp-augment` is not a transport gateway. It creates new enforced tools like `safe_write` and `safe_bash`.
-- `mcp-augment` is not the same thing as Claude Code hooks. Claude has native hooks; `mcp-augment` brings a hook-enforced tool layer to clients that do not.
+- Compared with proxy / gateway layers such as Latch, Bifrost, or MCPProxy: `mcp-augment` does not just sit in front of existing servers. It exposes its own enforced `safe_*` tools and runs a hook chain around those tool executions. Gateways and proxies can still add policy, filtering, approval, or routing, but they are a different integration point.
+- Compared with Claude Code hooks: Claude already has native hooks, including pre-tool input updates and multiple handler types. `mcp-augment` is for hosts that do not expose Claude's native hook system and instead need a hook-governed tool layer delivered through MCP.
 - `mcp-augment` is still soft enforcement at the host level. The model has to use `safe_*` tools instead of bypassing them with native tools. The strong tool descriptions help in practice, but this is not kernel-level sandboxing.
-- `mcp-augment` is a good demo of how to make MCP systems easier to trust: when the model botches the call before or after execution, the system can correct it, and the user can still step in with hooks and oversight.
+- The distinctive claim here is not "nobody else can enforce policy." The distinctive claim is that `mcp-augment` packages pre/post tool-call correction, review-resume behavior, and enforced replacement tools into a portable MCP-delivered layer that works across clients without relying on those clients to have Claude-style native hooks.
 
 Today, the clearest product statement is:
 
