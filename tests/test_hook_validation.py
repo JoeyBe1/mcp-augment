@@ -4,8 +4,11 @@ import os
 import sys
 import stat
 import json
+import builtins
+import subprocess
 import pytest
 from pathlib import Path
+from unittest.mock import patch
 
 # Point at the module the server imports — no mocking needed, stdlib only
 sys.path.insert(0, str(Path(__file__).parent.parent / "project-tools" / "mcp-hooks-server"))
@@ -69,3 +72,18 @@ class TestValidateHook:
         parsed = json.loads(raw)
         assert "verdict" in parsed
         assert "checks" in parsed
+
+    def test_read_error_fails(self, tmp_path):
+        p = _make_script(tmp_path, "#!/bin/bash\nTOOL_INPUT=$(cat)\n")
+        with patch.object(builtins, "open", side_effect=OSError("read denied")):
+            result = json.loads(validate_hook(p))
+        assert result["verdict"] == "FAIL"
+        assert result["checks"]["read_error"] == "read denied"
+
+    def test_bash_syntax_exception_fails(self, tmp_path):
+        p = _make_script(tmp_path, "#!/bin/bash\nTOOL_INPUT=$(cat)\n")
+        with patch.object(subprocess, "run", side_effect=RuntimeError("bash missing")):
+            result = json.loads(validate_hook(p))
+        assert result["verdict"] == "FAIL"
+        assert result["checks"]["bash_syntax"]["pass"] is False
+        assert result["checks"]["bash_syntax"]["detail"] == "bash missing"
