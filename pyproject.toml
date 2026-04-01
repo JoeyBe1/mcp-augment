@@ -1,0 +1,54 @@
+[project]
+name = "mcp-augment"
+version = "1.0.0"
+description = "Add safety hooks to AI coding tools that have none"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Joey Ashley" },
+]
+keywords = ["mcp", "hooks", "ai-safety", "coding-tools", "claude-code"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/JoeyBe1/mcp-augment"
+Issues = "https://github.com/JoeyBe1/mcp-augment/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Wheels/sdists: ship server, hooks, tests, and root docs — not dev scratch trees.
+[tool.hatch.build]
+exclude = [
+    "analysis/",
+    ".archive/",
+    ".claude/",
+    ".kilo/plans/",
+    ".kilo/agents/",
+    ".kilocode/",
+    "research_kb/",
+    "verify_all.py",
+    "test_hooks_runtime.sh",
+    "rename_to_mcp_augment.py",
+    "publish_prep.py",
+    "docker-compose.yml",
+    "Dockerfile.hooks-mcp",
+    "project-tools/mcp-hooks-server/server.py",
+    "project-tools/mcp-hooks-server/server-http.py",
+]

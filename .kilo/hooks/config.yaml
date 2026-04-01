@@ -1,0 +1,124 @@
+# .kilo/hooks/config.yaml — Canonical Schema + Examples
+# This is the FULL config for mcp-augment.
+# Location: .kilo/hooks/config.yaml (relative to project root)
+# Parsed by: mcp-augment.py → load_hooks_config()
+
+# ─────────────────────────────────────────────────────────────────
+# SECTION 1: Hook Events
+# All 21 Claude Code events supported.
+# Priority order for Phase 1: PreToolUse, PostToolUse, PermissionRequest
+# ─────────────────────────────────────────────────────────────────
+
+hooks:
+  # ── PreToolUse ──────────────────────────────────────────────────
+  # Fires BEFORE any tool runs. Can BLOCK (blocked=true).
+  # Claude equivalent: settings.json hooks.PreToolUse
+  PreToolUse:
+    - matcher: "Edit|Write|MultiEdit|delete_file"
+      hooks:
+        - type: command
+          command: ".kilo/hooks/block-sensitive-files.sh"
+          timeout: 10
+        - type: command
+          command: ".kilo/hooks/mode-enforcement.sh"
+          timeout: 10
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: ".kilo/hooks/validate-bash-command.sh"
+          timeout: 10
+        - type: command
+          command: ".kilo/hooks/pre-correct-search-query.sh"
+          timeout: 10
+        - type: command
+          command: ".kilo/hooks/pre-review-search-query.sh"
+          timeout: 10
+  # ── PostToolUse ─────────────────────────────────────────────────
+  # Fires AFTER tool succeeds. CANNOT block (tool already ran).
+  # Handlers run async by default — don't slow down the agent.
+  PostToolUse:
+    - matcher: "Write|Edit|MultiEdit"
+      hooks:
+        - type: command
+          command: ".kilo/hooks/auto-format.sh"
+          async: true
+          timeout: 30
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: ".kilo/hooks/post-shape-search-output.sh"
+          timeout: 10
+        - type: command
+          command: ".kilo/hooks/post-review-search-output.sh"
+          timeout: 10
+        - type: command
+          command: ".kilo/hooks/notify-search-oversight.sh"
+          timeout: 5
+  # ── PermissionRequest ────────────────────────────────────────────
+  # Fires when agent would normally ask permission.
+  # Can auto-approve safe operations.
+  PermissionRequest:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: ".kilo/hooks/auto-approve-safe.sh"
+          timeout: 5
+  # ── SessionStart ─────────────────────────────────────────────────
+  # Fires when session begins. Cannot block.
+  SessionStart:
+    - hooks:
+        - type: command
+          command: ".kilo/hooks/inject-git-context.sh"
+          async: true
+          # ── SessionEnd ───────────────────────────────────────────────────
+          # Fires when session ends. Cannot block.
+          # SessionEnd:
+          #   - hooks:
+          #       - type: command
+          #         command: ".kilo/hooks/save-session-summary.sh"
+          #         async: true
+# ── Stop ─────────────────────────────────────────────────────────
+# Fires after agent finishes response. CAN block (force continue).
+# Stop:
+#   - hooks:
+#       - type: command
+#         command: ".kilo/hooks/run-tests-on-stop.sh"
+#         timeout: 60
+
+# ── UserPromptSubmit ─────────────────────────────────────────────
+# Fires when user submits prompt. CAN block (deny prompt).
+# UserPromptSubmit:
+#   - hooks:
+#       - type: prompt
+#         prompt: "Is this prompt safe? Answer allow/deny."
+
+# ─────────────────────────────────────────────────────────────────
+# SECTION 2: Mode Enforcement
+# Extends mode-rules.yaml with enforcement config.
+# ─────────────────────────────────────────────────────────────────
+mode_enforcement:
+  # auto = MCP blocks automatically (no user intervention)
+  # manual = MCP warns but lets agent proceed
+  default: auto
+  events:
+    PreToolUse: auto
+    PostToolUse: auto
+    PermissionRequest: manual # Always let user decide permissions
+  # Mode file location (where current mode is stored)
+  mode_file: ".claude/session-env/autoresearch_mode"
+  # Rules file (mode-specific blocked patterns)
+  rules_file: "project-tools/mcp-hooks-server/mode-rules.yaml"
+# ─────────────────────────────────────────────────────────────────
+# SECTION 3: Global Settings
+# ─────────────────────────────────────────────────────────────────
+settings:
+  # Log all hook executions
+  log_file: ".claude/logs/mcp-augment.log"
+  # State file (last validation result)
+  state_file: ".claude/logs/kilo-hooks-state.json"
+  # Default timeout for command handlers (seconds)
+  default_timeout: 30
+  # Show verbose output for ALLOWED results
+  verbose: false
+  # Stop on first BLOCKED result (don't run remaining handlers)
+  fail_fast: true

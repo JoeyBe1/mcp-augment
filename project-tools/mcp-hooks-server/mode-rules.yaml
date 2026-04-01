@@ -1,0 +1,29 @@
+modes:
+  research:
+    description: "Exploration and data gathering phase"
+    blocked_actions: []
+    message: "Research mode: Free to explore and modify any files"
+
+  benchmark:
+    description: "Performance measurement phase - target/ is read-only"
+    blocked_actions:
+      - pattern: "target/current/.*"
+        message: "Benchmark mode: target/current/ is read-only. Switch to 'optimize' mode to modify."
+      - pattern: "target/.*\\.py"
+        message: "Benchmark mode: Cannot modify target/*.py files during measurement"
+      - pattern: "target/candidates/.*/"
+        message: "Benchmark mode: Cannot create/modify candidates during measurement"
+
+  optimize:
+    description: "Candidate generation and optimization phase"
+    blocked_actions:
+      - pattern: "eval/.*"
+        message: "CRITICAL: eval/ directory is ALWAYS immutable regardless of mode"
+      - pattern: "target/current/.*"
+        message: "Optimize mode: target/current/ is locked. Use candidates/ to create variants."
+
+  eval:
+    description: "Evaluation harness - NEVER modifiable"
+    blocked_actions:
+      - pattern: ".*"
+        message: "CRITICAL: eval/ is read-only. Evaluation harness must remain stable."
