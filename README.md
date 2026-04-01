@@ -4,15 +4,13 @@
 
 ---
 
-## What's in this repository
+## What's in this release
 
 | Path | Role |
 |------|------|
 | `project-tools/mcp-hooks-server/` | MCP server and hook engine — **this is what you run and ship.** |
 | `.kilo/hooks/` | Default hook scripts and `config.yaml` (portable; same shape as Claude Code hooks). |
 | `tests/` | Automated checks for hooks and MCP behavior. |
-| `analysis/` | **Local development notes only.** Not required to install, run, or publish; omitted from the PyPI package via `pyproject.toml`. Safe to keep in your private clone; it is **not** part of the public release story. |
-| Legacy autoresearch MCP (`server.py` / `server-http.py`) | **Not published** on GitHub in this repo’s release policy—keep those files only on your machine if you still use them. `mcp-augment` on port **8200** is sufficient for hooks, modes, and `get_current_mode`. |
 
 ---
 
@@ -63,6 +61,7 @@ git clone https://github.com/JoeyBe1/mcp-augment.git
 cd mcp-augment
 python3 -m venv .venv && source .venv/bin/activate
 pip install mcp
+brew install jq  # required by the default hook scripts
 ```
 
 ### 2. Start the server
@@ -382,7 +381,10 @@ These hooks are **portable** -- the same script works in Claude Code's native ho
 Install the launchd plist for automatic server startup:
 
 ```bash
-cp project-tools/mcp-hooks-server/com.mcp-augment.plist ~/Library/LaunchAgents/
+PROJECT_DIR="$(pwd)"
+sed "s|__PROJECT_DIR__|$PROJECT_DIR|g" \
+  project-tools/mcp-hooks-server/com.mcp-augment.plist \
+  > ~/Library/LaunchAgents/com.mcp-augment.plist
 launchctl load ~/Library/LaunchAgents/com.mcp-augment.plist
 ```
 
