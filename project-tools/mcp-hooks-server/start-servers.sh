@@ -31,6 +31,7 @@ done
 nohup "$PYTHON" "$SCRIPT_DIR/mcp-augment-http.py" "$PORT" > "/tmp/mcp-augment-${PORT}.log" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > "$PIDFILE"
+echo "$PORT" > /tmp/mcp-augment.port
 echo "mcp-augment started on port $PORT (PID: $SERVER_PID)"
 echo "MCP URL: http://localhost:${PORT}/mcp"
 
