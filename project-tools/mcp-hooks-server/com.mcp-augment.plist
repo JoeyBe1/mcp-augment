@@ -13,6 +13,11 @@
     </array>
     <key>WorkingDirectory</key>
     <string>__PROJECT_DIR__</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PROJECT_DIR</key>
+        <string>__PROJECT_DIR__</string>
+    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
