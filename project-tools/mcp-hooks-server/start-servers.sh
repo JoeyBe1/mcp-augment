@@ -11,9 +11,9 @@ if [ ! -x "$PYTHON" ]; then
     PYTHON="python3"  # fallback to PATH
 fi
 
-PIDFILE="/tmp/mcp-augment-8200.pid"
+PIDFILE="/tmp/mcp-augment.pid"
 
-# Kill only our own previously-started instance (not other processes on 8200)
+# Kill only our own previously-started instance
 if [ -f "$PIDFILE" ]; then
     OLD_PID=$(cat "$PIDFILE")
     kill "$OLD_PID" 2>/dev/null
@@ -21,25 +21,26 @@ if [ -f "$PIDFILE" ]; then
     sleep 1
 fi
 
-# If port 8200 is still occupied by something else, abort — don't clobber it
-if lsof -i :8200 | grep -q LISTEN; then
-    echo "ERROR: Port 8200 in use by another process (not ours). Not starting." >&2
-    exit 1
-fi
+# Find a free port starting at 8200
+PORT=8200
+while lsof -i ":$PORT" | grep -q LISTEN; do
+    PORT=$((PORT + 1))
+done
 
-# Start hooks server (port 8200)
-nohup "$PYTHON" "$SCRIPT_DIR/mcp-augment-http.py" > /tmp/mcp-augment-8200.log 2>&1 &
+# Start hooks server on the free port
+nohup "$PYTHON" "$SCRIPT_DIR/mcp-augment-http.py" "$PORT" > "/tmp/mcp-augment-${PORT}.log" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > "$PIDFILE"
-echo "mcp-augment started on port 8200 (PID: $SERVER_PID)"
+echo "mcp-augment started on port $PORT (PID: $SERVER_PID)"
+echo "MCP URL: http://localhost:${PORT}/mcp"
 
 sleep 2
 
 # Verify
-if lsof -i :8200 | grep -q LISTEN; then
-    echo "mcp-augment HTTP server running."
+if lsof -i ":$PORT" | grep -q LISTEN; then
+    echo "mcp-augment HTTP server running on port $PORT."
 else
-    echo "ERROR: Server failed to start. Check /tmp/mcp-augment-8200.log"
+    echo "ERROR: Server failed to start. Check /tmp/mcp-augment-${PORT}.log"
     exit 1
 fi
 

@@ -59,10 +59,16 @@ Agent> safe_bash "rm -rf /"
 ```bash
 git clone https://github.com/JoeyBe1/mcp-augment.git
 cd mcp-augment
+
+# Create and activate the virtual environment (required — all deps live here)
 python3 -m venv .venv && source .venv/bin/activate
-pip install mcp
-brew install jq  # required by the default hook scripts
+
+# Install all dependencies
+pip install -e .          # installs mcp + all deps from pyproject.toml
+brew install jq           # required by the default hook scripts (macOS)
 ```
+
+> **Note:** `start-servers.sh` uses `.venv/bin/python3` automatically. Always run from within the repo root so the venv path resolves correctly.
 
 ### 2. Start the server
 
@@ -71,6 +77,8 @@ brew install jq  # required by the default hook scripts
 python3 project-tools/mcp-hooks-server/mcp-augment.py
 
 # HTTP mode (for Kilo Code CLI and other HTTP-based clients):
+# Starts on port 8200 by default; auto-finds next free port if 8200 is taken.
+# Prints the MCP URL to use in your client config.
 ./project-tools/mcp-hooks-server/start-servers.sh
 # Hooks MCP on port 8200 only (public release)
 ```
