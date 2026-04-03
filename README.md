@@ -70,18 +70,15 @@ brew install jq           # required by the default hook scripts (macOS)
 
 > **Note:** `start-servers.sh` uses `.venv/bin/python3` automatically. Always run from within the repo root so the venv path resolves correctly.
 
-### 2. Start the server
+### 2. Start the server and configure your client
 
 ```bash
-# Stdio mode (for MCP clients that support it):
-python3 project-tools/mcp-hooks-server/mcp-augment.py
-
-# HTTP mode (for Kilo Code CLI and other HTTP-based clients):
-# Starts on port 8200 by default; auto-finds next free port if 8200 is taken.
-# Prints the MCP URL to use in your client config.
-./project-tools/mcp-hooks-server/start-servers.sh
-# Hooks MCP on port 8200 only (public release)
+./project-tools/mcp-hooks-server/setup.sh
 ```
+
+This does everything: starts the server (port 8200 by default, auto-finds next free port if taken), health-checks it, and writes the correct MCP URL to `mcp_config.json`. Re-run any time the port changes.
+
+> For stdio mode (MCP clients that support it): `python3 project-tools/mcp-hooks-server/mcp-augment.py`
 
 ### 3. Connect your AI coding tool
 
