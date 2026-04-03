@@ -9,19 +9,22 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>__PROJECT_DIR__/project-tools/mcp-hooks-server/start-servers.sh</string>
+        <string>/Users/joey/proj/mcp-augment/prod/project-tools/mcp-hooks-server/start-servers.sh</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>__PROJECT_DIR__</string>
+    <string>/Users/joey/proj/mcp-augment/prod</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PROJECT_DIR</key>
-        <string>__PROJECT_DIR__</string>
+        <string>/Users/joey/proj/mcp-augment/prod</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
-    <true/>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
     <key>StandardOutPath</key>
     <string>/tmp/mcp-augment-launchd.stdout.log</string>
     <key>StandardErrorPath</key>
