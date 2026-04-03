@@ -17,10 +17,10 @@ sys.path.insert(0, str(_ROOT / "project-tools" / "mcp-hooks-server"))
 from importlib.machinery import SourceFileLoader  # noqa: E402
 
 _mod = SourceFileLoader(
-    "kilo_hooks_rr",
+    "mcp_augment_rr",
     str(_ROOT / "project-tools" / "mcp-hooks-server" / "mcp-augment.py"),
 ).load_module()
-KiloHooksMCP = _mod.KiloHooksMCP
+MCAugmentMCP = _mod.MCAugmentMCP
 
 
 def _make_hook_script(tmp_path: Path, name: str, body: str) -> str:
@@ -46,7 +46,7 @@ def _inject_hooks(server, event_name: str, matcher: str, hook_defs: list) -> Non
 
 @pytest.fixture
 def hooks_server(tmp_path):
-    server = KiloHooksMCP.__new__(KiloHooksMCP)
+    server = MCAugmentMCP.__new__(MCAugmentMCP)
     server.project_dir = str(tmp_path)
     server.rules_file = str(tmp_path / "rules.yaml")
     server.log_file = str(tmp_path / "log.txt")
@@ -347,10 +347,10 @@ def hooks_server_repo():
     os.environ["PROJECT_DIR"] = str(_ROOT)
     sys.path.insert(0, str(_ROOT / "project-tools" / "mcp-hooks-server"))
     mod = SourceFileLoader(
-        "kilo_hooks_demo_rr",
+        "mcp_augment_demo_rr",
         str(_ROOT / "project-tools" / "mcp-hooks-server" / "mcp-augment.py"),
     ).load_module()
-    srv = mod.KiloHooksMCP()
+    srv = mod.MCAugmentMCP()
     srv.review_interactive_fn = lambda s: s
     return srv
 

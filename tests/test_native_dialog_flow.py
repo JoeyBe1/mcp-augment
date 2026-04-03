@@ -13,15 +13,15 @@ sys.path.insert(0, str(_ROOT / "project-tools" / "mcp-hooks-server"))
 from importlib.machinery import SourceFileLoader
 
 _mod = SourceFileLoader(
-    "kilo_hooks_native",
+    "mcp_augment_native",
     str(_ROOT / "project-tools" / "mcp-hooks-server" / "mcp-augment.py"),
 ).load_module()
-KiloHooksMCP = _mod.KiloHooksMCP
+MCAugmentMCP = _mod.MCAugmentMCP
 
 
 @pytest.fixture
 def hooks_server(tmp_path):
-    server = KiloHooksMCP.__new__(KiloHooksMCP)
+    server = MCAugmentMCP.__new__(MCAugmentMCP)
     server.project_dir = str(tmp_path)
     server.log_file = str(tmp_path / "log.txt")
     server.review_interactive_fn = None

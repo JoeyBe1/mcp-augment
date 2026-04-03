@@ -20,10 +20,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "project-tools" / "mcp-hoo
 from importlib.machinery import SourceFileLoader
 
 _mod = SourceFileLoader(
-    "kilo_hooks",
+    "mcp_augment",
     str(Path(__file__).parent.parent / "project-tools" / "mcp-hooks-server" / "mcp-augment.py"),
 ).load_module()
-KiloHooksMCP = _mod.KiloHooksMCP
+MCAugmentMCP = _mod.MCAugmentMCP
 
 
 def _make_hook_script(tmp_path: Path, name: str, body: str) -> str:
@@ -40,8 +40,8 @@ def _make_hook_script(tmp_path: Path, name: str, body: str) -> str:
 
 @pytest.fixture
 def hooks_server(tmp_path):
-    """KiloHooksMCP with isolated project dir, no real config loaded."""
-    server = KiloHooksMCP.__new__(KiloHooksMCP)
+    """MCAugmentMCP with isolated project dir, no real config loaded."""
+    server = MCAugmentMCP.__new__(MCAugmentMCP)
     server.project_dir = str(tmp_path)
     server.rules_file = str(tmp_path / "rules.yaml")
     server.log_file = str(tmp_path / "log.txt")

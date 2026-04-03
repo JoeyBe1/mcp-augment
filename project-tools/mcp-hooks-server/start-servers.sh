@@ -16,7 +16,7 @@ lsof -ti :8200 | xargs kill 2>/dev/null
 sleep 1
 
 # Start hooks server (port 8200)
-nohup "$PYTHON" "$SCRIPT_DIR/mcp-augment-http.py" > /tmp/kilo-hooks-8200.log 2>&1 &
+nohup "$PYTHON" "$SCRIPT_DIR/mcp-augment-http.py" > /tmp/mcp-augment-8200.log 2>&1 &
 echo "mcp-augment started on port 8200 (PID: $!)"
 
 sleep 2
@@ -25,7 +25,7 @@ sleep 2
 if lsof -i :8200 | grep -q LISTEN; then
     echo "mcp-augment HTTP server running."
 else
-    echo "ERROR: Server failed to start. Check /tmp/kilo-hooks-8200.log"
+    echo "ERROR: Server failed to start. Check /tmp/mcp-augment-8200.log"
     exit 1
 fi
 

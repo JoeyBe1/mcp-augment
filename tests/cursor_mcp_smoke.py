@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Smoke test for mcp-augment: same KiloHooksMCP code path as mcp-augment-http.py.
+Smoke test for mcp-augment: same MCAugmentMCP code path as mcp-augment-http.py.
 Run: PROJECT_DIR=<repo> python3 tests/cursor_mcp_smoke.py
 Used when Cursor has not yet loaded mcp-augment as an MCP server.
 """
@@ -22,7 +22,7 @@ _mod = SourceFileLoader(
     "mcpaug",
     str(REPO / "project-tools" / "mcp-hooks-server" / "mcp-augment.py"),
 ).load_module()
-hooks = _mod.KiloHooksMCP()
+hooks = _mod.MCAugmentMCP()
 
 
 def main() -> int:

@@ -34,11 +34,11 @@ from hook_validator import validate_hook as _validate_hook_impl
 
 # Import our existing server logic
 from importlib.machinery import SourceFileLoader
-_mod = SourceFileLoader("kilo_hooks", os.path.join(os.path.dirname(__file__), "mcp-augment.py")).load_module()
-KiloHooksMCP = _mod.KiloHooksMCP
+_mod = SourceFileLoader("mcp_augment", os.path.join(os.path.dirname(__file__), "mcp-augment.py")).load_module()
+MCAugmentMCP = _mod.MCAugmentMCP
 
 # Create the hooks server instance (reuses ALL existing logic)
-hooks = KiloHooksMCP()
+hooks = MCAugmentMCP()
 
 # HTTP listen port (ignore --stdio in argv so Cursor spawn does not break import)
 _argv_rest = [a for a in sys.argv[1:] if a != "--stdio"]

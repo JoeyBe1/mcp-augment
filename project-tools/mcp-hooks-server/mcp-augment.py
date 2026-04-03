@@ -26,8 +26,8 @@ from enum import Enum
 PROJECT_DIR = os.environ.get("PROJECT_DIR", str(Path(__file__).resolve().parents[2]))
 LOG_FILE = f"{PROJECT_DIR}/.claude/logs/mcp-augment.log"
 LOG_FILE_KILO = f"{PROJECT_DIR}/.kilo/logs/mcp-augment.log"
-STATE_FILE = f"{PROJECT_DIR}/.claude/logs/kilo-hooks-state.json"
-STATE_FILE_KILO = f"{PROJECT_DIR}/.kilo/logs/kilo-hooks-state.json"
+STATE_FILE = f"{PROJECT_DIR}/.claude/logs/mcp-augment-state.json"
+STATE_FILE_KILO = f"{PROJECT_DIR}/.kilo/logs/mcp-augment-state.json"
 HOOKS_CONFIG_FILE = f"{PROJECT_DIR}/.kilo/hooks/config.yaml"
 
 # User review-resume: max wait in TextEdit (seconds). 0 means wait indefinitely.
@@ -58,7 +58,7 @@ class ValidationResult:
         return {**asdict(self), "status": self.status.value}
 
 
-class KiloHooksMCP:
+class MCAugmentMCP:
     """MCP server with hook simulation for mode enforcement"""
 
     def __init__(self):
@@ -1857,8 +1857,8 @@ if __name__ == "__main__":
 
     _proj = os.environ.get("PROJECT_DIR", str(Path(__file__).resolve().parents[2]))
     _log_paths = [
-        os.path.join(_proj, ".claude/logs/kilo-hooks-startup.log"),
-        os.path.join(_proj, ".kilo/logs/kilo-hooks-startup.log"),
+        os.path.join(_proj, ".claude/logs/mcp-augment-startup.log"),
+        os.path.join(_proj, ".kilo/logs/mcp-augment-startup.log"),
     ]
     for _lp in _log_paths:
         os.makedirs(os.path.dirname(_lp), exist_ok=True)
@@ -1876,7 +1876,7 @@ if __name__ == "__main__":
             f"  PATH: {os.environ.get('PATH', 'N/A')}\n"
             f"  PROJECT_DIR: {os.environ.get('PROJECT_DIR', 'N/A')}\n"
         )
-        server = KiloHooksMCP()
+        server = MCAugmentMCP()
         _startup_log(
             f"[{datetime.now().isoformat()}] Init complete, entering main loop\n"
         )
