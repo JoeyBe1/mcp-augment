@@ -394,16 +394,11 @@ lsof -i :8200  # mcp-augment hooks server
 ## Testing
 
 ```bash
-python3 tests/mcp_protocol_test.py
-python3 tests/cursor_mcp_smoke.py
-pytest tests/test_two_way_hooks.py tests/test_demo_search_interception.py tests/test_review_resume_interception.py -q
+# Run the full test suite (38 tests, no server required)
+python -m pytest tests/ -q
 ```
 
-Expected today:
-
-- `tests/mcp_protocol_test.py` passes against the live HTTP server on port `8200`
-- `tests/cursor_mcp_smoke.py` returns `"all_passed": true`
-- `pytest tests/test_two_way_hooks.py tests/test_demo_search_interception.py tests/test_review_resume_interception.py -q` passes
+Expected: `38 passed`.
 
 ---
 
