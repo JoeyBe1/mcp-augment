@@ -61,11 +61,18 @@ class ValidationResult:
 class MCAugmentMCP:
     """MCP server with hook simulation for mode enforcement"""
 
+    mode = "auto"  # class-level default for __new__ test fixtures
+
     def __init__(self):
         self.project_dir = PROJECT_DIR
         self.log_file = LOG_FILE
         self.state_file = STATE_FILE
         self.file_monitors = {}  # path -> {mtime, size, process}
+
+        # Three enforcement modes
+        self.mode = os.environ.get("MCP_AUGMENT_MODE", "auto")
+        if self.mode not in ("auto", "manual", "hitl"):
+            self.mode = "auto"
 
         # Optional test hook: if set, called with review envelope JSON string; return final JSON string.
         self.review_interactive_fn: Optional[Callable[[str], str]] = None
@@ -182,7 +189,7 @@ class MCAugmentMCP:
         config = self.load_hooks_config()
         return self._get_hooks_for_event_from_config(config, event_name, tool_name)
 
-    def run_command_hook(self, hook: Dict, event_data: Dict) -> Dict:
+    def run_command_hook(self, hook: Dict, event_data: Dict, allow_manual_review: bool = True) -> Dict:
         """
         Execute a type:command handler.
 
@@ -220,16 +227,62 @@ class MCAugmentMCP:
             if result.returncode == 2:
                 # BLOCKED — try to parse reason from stdout
                 reason = f"Hook blocked: {command}"
+                review_input = None
+                review_title = None
+                review_instructions = None
                 try:
                     output = json.loads(result.stdout)
                     hook_output = output.get("hookSpecificOutput", {})
                     if hook_output.get("permissionDecision") == "deny":
                         reason = hook_output.get("permissionDecisionReason", reason)
+                    # Extract review metadata if present
+                    review_input = output.get("reviewInput")
+                    review_title = output.get("reviewTitle")
+                    review_instructions = output.get("reviewInstructions")
                 except (json.JSONDecodeError, AttributeError):
                     # Fallback: use stderr or stdout as reason text
                     reason = result.stderr.strip() or result.stdout.strip() or reason
 
-                return {"blocked": True, "reason": reason}
+                if self.mode == "auto":
+                    return {"blocked": True, "reason": reason}
+
+                # manual or hitl: open review dialog
+                if review_input and isinstance(review_input, dict):
+                    instr = review_instructions or reason
+                    title = review_title or "Operation Blocked"
+                    edited = self._run_review_envelope(
+                        "tool_input",
+                        event_data.get("tool_input", {}),
+                        review_input,
+                        instr,
+                        title,
+                    )
+                    if edited is not None:
+                        # User accepted/edited — apply the edited input
+                        event_data["tool_input"] = {
+                            **(event_data.get("tool_input") or {}),
+                            **edited,
+                        }
+                        return {"blocked": False, "modifiedInput": edited}
+                    else:
+                        # User declined (empty dict returned)
+                        return {"blocked": True, "reason": reason}
+                else:
+                    # No reviewInput from hook — fallback: basic review of tool_input
+                    snap_in = event_data.get("tool_input", {})
+                    instr = review_instructions or f"Blocked: {reason}. Review and edit the command, or return empty to decline."
+                    title = review_title or "Operation Blocked"
+                    edited = self._run_review_envelope(
+                        "tool_input", snap_in, snap_in, instr, title
+                    )
+                    if edited is not None:
+                        event_data["tool_input"] = {
+                            **(event_data.get("tool_input") or {}),
+                            **edited,
+                        }
+                        return {"blocked": False, "modifiedInput": edited}
+                    else:
+                        return {"blocked": True, "reason": reason}
 
             elif result.returncode == 0:
                 # ALLOWED — optional JSON on stdout for two-way + review-resume hooks
@@ -242,13 +295,53 @@ class MCAugmentMCP:
                             self._merge_hook_response_json(output, response)
                     except (json.JSONDecodeError, TypeError, ValueError):
                         pass
+
+                if self.mode == "manual" and allow_manual_review:
+                    tool_input = event_data.get("tool_input", {})
+                    edited = self._run_review_envelope(
+                        "tool_input",
+                        tool_input,
+                        tool_input,
+                        "Operation allowed. Review and approve this action, or edit/decline.",
+                        "Manual Approval Required",
+                    )
+                    if edited and edited != tool_input:
+                        event_data["tool_input"] = {
+                            **(event_data.get("tool_input") or {}),
+                            **edited,
+                        }
+                        return {"blocked": False, "modifiedInput": edited}
+                    if edited and edited == tool_input:
+                        return {"blocked": False, "modifiedInput": edited}
+                    return {"blocked": True, "reason": "User declined (manual mode)"}
+
                 return response
 
             else:
-                # Non-fatal warning (exit 1, 3, etc.)
+                # Soft block / try again (exit 1, 3, etc.)
                 warning = result.stderr.strip() or result.stdout.strip()
-                self.log(f"Command hook warning (exit {result.returncode}): {warning}")
-                return {"blocked": False, "warning": warning}
+                self.log(f"Command hook soft-blocked (exit {result.returncode}): {warning}")
+
+                if self.mode == "manual" and allow_manual_review:
+                    snap_in = event_data.get("tool_input", {})
+                    edited = self._run_review_envelope(
+                        "tool_input",
+                        snap_in,
+                        snap_in,
+                        f"Hook warning: {warning}. Review and correct this command, or decline to cancel.",
+                        "Correction Required",
+                    )
+                    if edited and edited != snap_in:
+                        event_data["tool_input"] = {
+                            **(event_data.get("tool_input") or {}),
+                            **edited,
+                        }
+                        return {"blocked": False, "modifiedInput": edited}
+                    if edited and edited == snap_in:
+                        return {"blocked": False, "modifiedInput": edited}
+                    return {"blocked": True, "reason": f"User declined: {warning}"}
+
+                return {"blocked": True, "reason": warning}
 
         except subprocess.TimeoutExpired:
             self.log(f"Command hook timed out after {timeout}s: {command}")
@@ -299,7 +392,7 @@ class MCAugmentMCP:
             self.log(f"HTTP hook error ({url}): {e}")
             return {"blocked": False, "warning": f"HTTP hook unreachable: {e}"}
 
-    def execute_handler(self, hook: Dict, event_data: Dict) -> Dict:
+    def execute_handler(self, hook: Dict, event_data: Dict, allow_manual_review: bool = True) -> Dict:
         """
         Route to the correct handler by type.
 
@@ -308,7 +401,7 @@ class MCAugmentMCP:
         """
         handler_type = hook.get("type", "")
         if handler_type == "command":
-            return self.run_command_hook(hook, event_data)
+            return self.run_command_hook(hook, event_data, allow_manual_review=allow_manual_review)
         elif handler_type == "http":
             return self.run_http_hook(hook, event_data)
         elif handler_type == "prompt":
@@ -362,7 +455,7 @@ class MCAugmentMCP:
                 warnings: List[str] = []
                 merged_output: Dict[str, Any] = {}
                 for hook in hooks:
-                    result = self.execute_handler(hook, event_data)
+                    result = self.execute_handler(hook, event_data, allow_manual_review=False)
                     if result.get("warning"):
                         warnings.append(result["warning"])
                     snap_out = copy.deepcopy(event_data.get("tool_output") or {})
@@ -438,6 +531,8 @@ class MCAugmentMCP:
                 edited = self._run_review_envelope(
                     "tool_input", snap_in, ri, instr, title
                 )
+                if edited is None:
+                    return {"blocked": True, "reason": "User declined via review dialog"}
                 event_data["tool_input"] = {
                     **(event_data.get("tool_input") or {}),
                     **edited,
